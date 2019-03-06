@@ -7,6 +7,7 @@ import IGE.Types
 import IGE.Layout
 import Data.Graph.Inductive.Graph
 import Data.Graph.Inductive.PatriciaTree
+import Data.Text (pack)
 import Graphics.Rendering.Cairo
 import Lens.Micro.Platform
 import qualified Data.Map.Strict as Map
@@ -33,9 +34,21 @@ instance Renderable () where
     arc x y nodeSize 0 (2 * pi)
     fill
 
+instance Renderable Weight where
+  render n = render (pack $ show n)
+
 instance RenderNode Text where
+  renderNode t c@(x :+ y) = do
+    let c' = x :+ (y + 20)
+    render () c
+    render t c'
+
+instance RenderNode Weight where
+  renderNode n = renderNode (pack $ show n)
 
 instance RenderEdge Text where
+
+instance RenderEdge Weight where
 
 instance RenderNode () where
 

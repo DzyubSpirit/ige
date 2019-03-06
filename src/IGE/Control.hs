@@ -1,6 +1,7 @@
 module IGE.Control 
   ( runKeyBinding
   , basicKeyBinding
+  , showLabels
   )
   where
 
@@ -10,7 +11,8 @@ import qualified Data.Map.Strict as Map
 import Lens.Micro.Platform
 import Conduit
 import Data.Conduit.TMChan
-import Graphics.UI.Gtk hiding (get)
+import Data.Conduit.Combinators (peek)
+import Graphics.UI.Gtk hiding (get, Weight)
 import Data.Graph.Inductive.Graph
 import Data.Graph.Inductive.PatriciaTree
 import Control.Concurrent.STM
@@ -29,24 +31,26 @@ import IGE.Serialization
 import IGE.Render
 
 instance Inputable Node where
-  readInput = MaybeT (initLabels >> loop)
+  readInput = MaybeT (showLabels >> loop)
     where
-      initLabels = updateEditor $ do
-        gr <- use _graph
-        _labels .= labelGraph gr
-      reset = updateEditor $ _labels .= []
-      loop = awaitOrFinish Nothing $ \kv ->
-        case keyToChar kv of
-          (Just c) -> do
-            labels <- runTVarReader $ view _labels
-            let labels' = [(xs, node) | (x:xs, node) <- labels, x == c]
-            case labels' of
-              [] -> reset >> return Nothing
-              [(_, node)] -> reset >> return (Just node)
-              xs -> do
-                updateEditor $ _labels .= labels'
-                loop
-          Nothing -> reset >> return Nothing
+      clear = clearLabels >> return Nothing
+      loop = (readCharKey >>=) $ maybe clear $ \ch ->
+        matchingLabels ch >>= \x -> case x of
+          [] -> clear
+          [(_, node)] -> clearLabels >> return (Just node)
+          labels -> updateLabels labels >> loop
+
+readCharKey :: KeyBinding n e (Maybe Char)
+readCharKey = awaitOrFinish Nothing $ return . keyToChar
+
+matchingLabels :: Char -> KeyBinding n e [(String, Node)]
+matchingLabels ch = do
+  labels <- runTVarReader $ view _labels
+  return [label | label@(x:_, _) <- labels, x == ch]
+
+updateLabels :: [(String, Node)] -> KeyBinding n e ()
+updateLabels labels = updateEditor $ _labels .= labels'
+  where labels' = [(xs, node) | (_:xs, node) <- labels]
 
 labelChars = "asdfghjkl"
 
@@ -61,6 +65,14 @@ makeLabels n alphabet = helper n alphabet "" Seq.empty
       case viewl queue of
         a :< rest -> helper (n + 1) alphabet a rest
         EmptyL -> []
+
+showLabels :: KeyBinding n e ()
+showLabels = updateEditor $ do
+  gr <- use _graph
+  _labels .= labelGraph gr
+
+clearLabels :: KeyBinding n e ()
+clearLabels = updateEditor $ _labels .= []
 
 labelGraph :: Gr n e -> [(String, Node)]
 labelGraph gr = zip labels (nodes gr)
@@ -93,9 +105,18 @@ instance Inputable () where
 instance Inputable Text where
   readInput = pack <$> readInput
 
+instance Inputable Weight where
+  readInput = do
+    s <- readInput
+    maybe readInput return $ readMaybe s
+
 instance NodeType Text where
 
+instance NodeType Weight where
+
 instance EdgeType Text where
+
+instance EdgeType Weight where
 
 instance NodeType () where
 
@@ -118,10 +139,27 @@ linkNodes = do
   label <- readInputPrompt "label: "
   lift $ updateEditorLayout $ _graph %= insEdge (n1, n2, label)
 
+delete :: MaybeT (KeyBinding n e) ()
+delete = do
+  lift showLabels
+  kv <- lift await
+  let edgeOrNode kv = do
+        case keyToChar kv of
+          Nothing -> MaybeT $ Just <$> clearLabels
+          Just ch -> if ch == 'e' then deleteEdge 
+                     else lift (leftover kv) >> deleteNode
+  maybe (return ()) edgeOrNode kv 
+
 deleteNode :: MaybeT (KeyBinding n e) ()
 deleteNode = do
   node <- readInput
   lift $ updateEditor $ _graph %= delNode node
+
+deleteEdge :: MaybeT (KeyBinding n e) ()
+deleteEdge = do
+  node1 <- readInputPrompt "SELECT NODE 1"
+  node2 <- readInputPrompt "SELECT NODE 2"
+  lift $ updateEditor $ _graph %= delEdge (node1, node2)
 
 readGraph :: (FromJSON n, FromJSON e) => MaybeT (KeyBinding n e) ()
 readGraph = do
@@ -170,7 +208,7 @@ basicKeyBinding = loop
         loop
       | kv == xK_a = runMaybeT addNode >> loop
       | kv == xK_c = runMaybeT linkNodes >> loop
-      | kv == xK_d = runMaybeT deleteNode >> loop
+      | kv == xK_d = runMaybeT delete >> loop
       | kv == xK_w = runMaybeT writeGraph >> loop
       | kv == xK_o = runMaybeT readGraph >> loop
       | kv == xK_q = liftIO mainQuit >> return ()

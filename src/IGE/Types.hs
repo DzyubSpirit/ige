@@ -31,7 +31,8 @@ class Amplitwist a where
 
 instance Translation ℂ where
   _x f (x :+ y) = (:+ y) <$> f x
-  _y f (x :+ y) = (x :+) <$> f x
+-- TODO(DzyubSpirit): find out should it be `(x :+) <$> f y`
+  _y f (x :+ y) = (x :+) <$> f y
 
 instance Amplitwist ℂ where
   _r f z = (* z) . (:+ 0) . (/ r) <$> f r
@@ -133,6 +134,9 @@ updateEditorLayout em = do
   x <- runTVarState em
   yield LayoutChange
   return x
+
+newtype Weight = Weight { weight :: Int }
+  deriving (Eq, Show, Ord, Num, Read, ToJSON, FromJSON)
 
 class Inputable a where
   readInput :: MaybeT (KeyBinding n e) a
