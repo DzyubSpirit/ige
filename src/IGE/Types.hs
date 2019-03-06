@@ -2,6 +2,7 @@ module IGE.Types where
 
 import Protolude
 import Prelude (String)
+import qualified Prelude as P
 import Data.Complex
 import Data.Graph.Inductive.Graph
 import Data.Graph.Inductive.PatriciaTree
@@ -136,7 +137,10 @@ updateEditorLayout em = do
   return x
 
 newtype Weight = Weight { weight :: Int }
-  deriving (Eq, Show, Ord, Num, Read, ToJSON, FromJSON)
+  deriving (Eq, Ord, Num, Read, ToJSON, FromJSON)
+
+instance Show Weight where
+  show (Weight x) = P.show x
 
 class Inputable a where
   readInput :: MaybeT (KeyBinding n e) a
