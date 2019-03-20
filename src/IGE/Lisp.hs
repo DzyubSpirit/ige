@@ -1,11 +1,12 @@
 module IGE.Lisp where
 
-import Protolude hiding ((<$>))
-import Text.Megaparsec
+import Prelude (String)
+import Protolude
+import Text.Megaparsec as MP
 import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 import Data.Text (pack)
-import Text.PrettyPrint.Leijen.Text hiding (parens, empty)
+import Text.PrettyPrint.Leijen.Text hiding (parens, empty, (<$>))
 
 type Parser = Parsec Void Text
 
@@ -22,11 +23,11 @@ data SExp = Atom Text | List [SExp]
   deriving (Show, Eq)
 
 sexpParser :: Parser SExp
-sexpParser = (fmap List $ parens (many sexpParser)) <|> (fmap Atom $ lexeme atom)
+sexpParser = List <$> parens (MP.many sexpParser) <|> (Atom <$> lexeme atom)
 
 atom :: Parser Text
-atom = fmap pack $ some (alphaNumChar <|> symbolChar)
+atom = pack <$> Protolude.some (alphaNumChar <|> symbolChar)
 
 pprintSexp :: SExp -> Doc
 pprintSexp (List sexps) = text "(" <> hsep (map pprintSexp sexps) <> text ")"
-pprintSexp (Atom a) = textStrict a
+pprintSexp (Atom a    ) = textStrict a

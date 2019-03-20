@@ -14,35 +14,36 @@ import IGE.Render
 import IGE.Layout
 import IGE.Control
 
-runMainWindow :: (NodeType n, EdgeType e) => Gr n e -> RM -> KeyBinding n e () -> IO ()
+runMainWindow
+  :: (NodeType n, EdgeType e) => Gr n e -> RM -> KeyBinding n e () -> IO ()
 runMainWindow initGr initRM keybinding = do
-  void initGUI
-  w <- windowNew
+  initGUI
+  w  <- windowNew
   da <- drawingAreaNew
   w `containerAdd` da
-  editorState <- newTVarIO $ EditorState {
-      esGraph = initGr
-    , esRM = initRM
-    , esNum = noNodes initGr
-    , esCmd = ""
-    , esPrompt = ""
-    , esLabels = []
+  editorState <- newTVarIO EditorState
+    { esGraph   = initGr
+    , esRM      = initRM
+    , esNum     = noNodes initGr
+    , esCmd     = ""
+    , esPrompt  = ""
+    , esLabels  = []
     , esNodeMap = layoutGr initGr
-  }
+    }
   keyChan <- newTBMChanIO 16
 
-  _ <- forkIO $ runKeyBinding keyChan editorState w keybinding
+  _       <- forkIO $ runKeyBinding keyChan editorState w keybinding
 
-  void $ (w `on` deleteEvent) $ liftIO mainQuit >> return True
+  (w `on` deleteEvent) $ liftIO mainQuit >> return True
 
-  void $ (da `on` exposeEvent) $ liftIO $ do
-    dw <- widgetGetDrawWindow da
-    es <- readTVarIO editorState
-    dims <- drawableGetSize dw
-    renderWithDrawable dw $ renderEditorState es dims
-    return True
+  (da `on` draw) $ liftIO $ do
+    Just dw <- widgetGetWindow da
+    es      <- readTVarIO editorState
+    dims    <- liftM2 (,) (drawWindowGetWidth dw) (drawWindowGetHeight dw)
 
-  void $ (da `on` keyPressEvent) $ do
+    renderWithDrawWindow dw $ renderEditorState es dims
+
+  (da `on` keyPressEvent) $ do
     kv <- eventKeyVal
     liftIO $ atomically $ writeTBMChan keyChan kv
     return True

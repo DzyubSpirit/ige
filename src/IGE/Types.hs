@@ -32,7 +32,6 @@ class Amplitwist a where
 
 instance Translation ℂ where
   _x f (x :+ y) = (:+ y) <$> f x
--- TODO(DzyubSpirit): find out should it be `(x :+) <$> f y`
   _y f (x :+ y) = (x :+) <$> f y
 
 instance Amplitwist ℂ where
@@ -113,7 +112,7 @@ runTVarState action = do
 runTVarReader :: (MonadReader (TVar s) m, MonadIO m) => Reader s a -> m a
 runTVarReader action = do
   stateVar <- ask
-  s <- liftIO $ readTVarIO stateVar
+  s        <- liftIO $ readTVarIO stateVar
   return $ runReader action s
 
 data RefreshType = LayoutChange | NoLayoutChange
@@ -137,7 +136,7 @@ updateEditorLayout em = do
   return x
 
 newtype Weight = Weight { weight :: Int }
-  deriving (Eq, Ord, Num, Read, ToJSON, FromJSON)
+  deriving (Eq, Ord, Num, ToJSON, FromJSON)
 
 instance Show Weight where
   show (Weight x) = P.show x

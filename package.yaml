@@ -1,0 +1,82 @@
+name:                ige
+version:             0.2.1.1
+github:              "olynch/ige"
+license:             BSD3
+author:              "Owen Lynch"
+maintainer:          "owen@olynch.me"
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+# Metadata used when publishing your package
+synopsis:            An keyboard-driven interactive graph editor
+category:            Editing
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         IGE attempts to build a reusable library for implementing graph editors. The intent is to allow a new class of programming languages that have non-linear structure. See `glance` (an alternative syntax for haskell) for one example of such a structure. Other applications include circuit design, commutative diagram drawing, server configuration. Currently a very early alpha.
+
+dependencies:
+- base >= 4.7 && < 5
+- cairo
+- gtk3
+- protolude
+- fgl
+- microlens-platform 
+- linear
+- containers
+- conduit
+- conduit-combinators
+- stm-conduit
+- stm-chans
+- stm
+- array
+- mwc-random
+- mtl
+- transformers
+- megaparsec
+- text
+- wl-pprint-text
+- aeson
+- bytestring
+- directory
+
+default-extensions:
+- NoImplicitPrelude
+- FlexibleContexts
+- NoMonomorphismRestriction
+- TypeFamilies
+- GeneralizedNewtypeDeriving
+- TemplateHaskell
+- TypeSynonymInstances
+- FlexibleInstances
+- RankNTypes
+- OverloadedStrings
+
+
+library:
+  source-dirs: src
+
+executables:
+  ige-exe:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - ige
+
+tests:
+  ige-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - ige

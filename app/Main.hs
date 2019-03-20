@@ -8,7 +8,8 @@ import IGE.UI
 import IGE.Control
 
 sampleGr :: Gr Weight Weight
-sampleGr = mkGraph [(0, 10), (1, 20), (2, 30)] [(0, 1, 1), (1, 2, 2), (0, 2, 3)]
+sampleGr =
+  mkGraph [(0, 10), (1, 20), (2, 30)] [(0, 1, 1), (1, 2, 2), (0, 2, 3)]
 
 initRM :: RM
 initRM = RM (100 :+ 0) (100 :+ 100)
