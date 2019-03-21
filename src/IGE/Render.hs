@@ -47,13 +47,22 @@ instance RenderNode Weight where
   renderNode n = renderNode (pack $ show n)
 
 instance RenderEdge Text where
+  renderEdge s p1@(x1 :+ y1) p2@(x2 :+ y2) = do
+    extents <- textExtents s
+    let r = sqrt $ (y2-y1)^2 + (x2-x1)^2
+        evx :+ evy = (p2 - p1) / (r :+ 0)
+        pVec = (-evy) :+ evx
+        pad = textExtentsHeight extents + textExtentsWidth extents
+        p = (p1 + p2) / 2 + pVec * (pad :+ 0)
+    render s p
 
 instance RenderEdge Weight where
+  renderEdge w = renderEdge (pack $ show w)
 
 instance RenderNode () where
 
 instance RenderEdge () where
-  renderEdge _ _ = return ()
+  renderEdge _ _ _ = return ()
 
 nodeSize :: Double
 nodeSize = 4
@@ -62,20 +71,31 @@ renderBackground :: Render ()
 renderBackground = do
   setSourceRGB 0.1 0.1 0.1
   paint
-  setSourceRGB 0.9 0.9 0.9
+  setSourceRGB   0.9                   0.9             0.9
   selectFontFace ("monospace" :: Text) FontSlantNormal FontWeightNormal
   setFontSize 15
 
 renderNodes :: (RenderNode a) => [(ℂ, a)] -> Render ()
 renderNodes nodes = mapM_ (uncurry $ flip renderNode) nodes
 
+arrowWidth = 30
+arrowHeight = 5
+
 renderEdges :: (RenderEdge a) => [(ℂ, ℂ, a)] -> Render ()
-renderEdges edges =
-  forM_ edges $ \(p1@(x0 :+ y0), p2@(x1 :+ y1), label) -> do
-    moveTo x0 y0
-    lineTo x1 y1
-    stroke
-    renderEdge label $ (p1 + p2) / (2 :+ 0)
+renderEdges edges = forM_ edges $ \(p0@(x0:+y0), p1@(x1:+y1), label) -> do
+  moveTo x0 y0
+  lineTo x1 y1
+  let r             = sqrt $ (x1 - x0) ^ 2 + (y1 - y0) ^ 2
+      ev@(evx:+evy) = (p1 - p0) / (r :+ 0)
+      pv            = (-evy) :+ evx
+      x2:+y2        = p1 - ev * arrowWidth + pv * arrowHeight
+      x3:+y3        = p1 - ev * arrowWidth - pv * arrowHeight
+  moveTo x1 y1
+  lineTo x2 y2
+  moveTo x1 y1
+  lineTo x3 y3
+  stroke
+  renderEdge label p0 p1
 
 renderCommand :: (Int, Int) -> [Char] -> Render ()
 renderCommand (w, h) s = do
@@ -86,28 +106,29 @@ renderCommand (w, h) s = do
 textMargin = 3
 
 renderLabels :: [([Char], ℂ)] -> Render ()
-renderLabels labels =
-  forM_ labels $ \(s, x :+ y) -> do
-    extents <- textExtents s
-    rectangle
-      (x - textMargin)
-      (y - (textExtentsHeight extents + textMargin))
-      (textExtentsWidth extents + (2 * textMargin))
-      (textExtentsHeight extents + (2 * textMargin))
-    setSourceRGB 0.7 0.7 0.2
-    fill
-    setSourceRGB 0.1 0.1 0.1
-    moveTo x y
-    showText s
+renderLabels labels = forM_ labels $ \(s, x:+y) -> do
+  extents <- textExtents s
+  rectangle (x - textMargin)
+            (y - (textExtentsHeight extents + textMargin))
+            (textExtentsWidth extents + (2 * textMargin))
+            (textExtentsHeight extents + (2 * textMargin))
+  setSourceRGB 0.7 0.7 0.2
+  fill
+  setSourceRGB 0.1 0.1 0.1
+  moveTo x y
+  showText s
 
-renderEditorState :: (RenderNode n, RenderEdge e) => EditorState n e -> (Int, Int) -> Render ()
+renderEditorState
+  :: (RenderNode n, RenderEdge e) => EditorState n e -> (Int, Int) -> Render ()
 renderEditorState es dims = do
-  let rm = es^._rm
-  let graph = es^._graph
-  let labels = es^._labels
-  let nodeMap = (rm ^*) <$> es^._nodeMap
+  let rm      = es ^. _rm
+  let graph   = es ^. _graph
+  let labels  = es ^. _labels
+  let nodeMap = (rm ^*) <$> es ^. _nodeMap
   renderBackground
-  renderEdges $ ((_1 %~ (nodeMap Map.!)) . (_2 %~ (nodeMap Map.!))) <$> labEdges graph
+  renderEdges
+    $   ((_1 %~ (nodeMap Map.!)) . (_2 %~ (nodeMap Map.!)))
+    <$> labEdges graph
   renderNodes $ (_1 %~ (nodeMap Map.!)) <$> labNodes graph
-  renderCommand dims (es^._prompt ++ reverse (es^._cmd))
+  renderCommand dims (es ^. _prompt ++ reverse (es ^. _cmd))
   renderLabels $ over _2 (nodeMap Map.!) <$> labels

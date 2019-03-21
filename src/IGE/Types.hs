@@ -70,8 +70,8 @@ class Renderable a => RenderNode a where
   renderNode = render
 
 class Renderable a => RenderEdge a where
-  renderEdge :: a -> ℂ -> Render ()
-  renderEdge = render
+  renderEdge :: a -> ℂ -> ℂ -> Render ()
+  renderEdge l p1 p2 = render l $ (p1 + p2) /2
 
 data EditorState n e = EditorState {
     esGraph :: Gr n e
