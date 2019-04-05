@@ -73,6 +73,9 @@ class Renderable a => RenderEdge a where
   renderEdge :: a -> ℂ -> ℂ -> Render ()
   renderEdge l p1 p2 = render l $ (p1 + p2) /2
 
+class DimsRenderable a where
+  dimsRender :: (Int, Int) -> a ->  Render ()
+
 data EditorState n e = EditorState {
     esGraph :: Gr n e
   , esRM :: RM

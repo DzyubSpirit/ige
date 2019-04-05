@@ -41,7 +41,7 @@ runMainWindow initGr initRM keybinding = do
     es      <- readTVarIO editorState
     dims    <- liftM2 (,) (drawWindowGetWidth dw) (drawWindowGetHeight dw)
 
-    renderWithDrawWindow dw $ renderEditorState es dims
+    renderWithDrawWindow dw $ dimsRender dims es
 
   (da `on` keyPressEvent) $ do
     kv <- eventKeyVal

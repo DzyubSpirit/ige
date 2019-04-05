@@ -1,6 +1,4 @@
-module IGE.Render
-  ( renderEditorState )
-  where
+module IGE.Render where
 
 import Protolude
 import IGE.Types
@@ -118,17 +116,16 @@ renderLabels labels = forM_ labels $ \(s, x:+y) -> do
   moveTo x y
   showText s
 
-renderEditorState
-  :: (RenderNode n, RenderEdge e) => EditorState n e -> (Int, Int) -> Render ()
-renderEditorState es dims = do
-  let rm      = es ^. _rm
-  let graph   = es ^. _graph
-  let labels  = es ^. _labels
-  let nodeMap = (rm ^*) <$> es ^. _nodeMap
-  renderBackground
-  renderEdges
-    $   ((_1 %~ (nodeMap Map.!)) . (_2 %~ (nodeMap Map.!)))
-    <$> labEdges graph
-  renderNodes $ (_1 %~ (nodeMap Map.!)) <$> labNodes graph
-  renderCommand dims (es ^. _prompt ++ reverse (es ^. _cmd))
-  renderLabels $ over _2 (nodeMap Map.!) <$> labels
+instance (RenderNode n, RenderEdge e) => DimsRenderable (EditorState n e) where
+  dimsRender dims es  =do
+    let rm      = es ^. _rm
+    let graph   = es ^. _graph
+    let labels  = es ^. _labels
+    let nodeMap = (rm ^*) <$> es ^. _nodeMap
+    renderBackground
+    renderEdges
+      $   ((_1 %~ (nodeMap Map.!)) . (_2 %~ (nodeMap Map.!)))
+      <$> labEdges graph
+    renderNodes $ (_1 %~ (nodeMap Map.!)) <$> labNodes graph
+    renderCommand dims (es ^. _prompt ++ reverse (es ^. _cmd))
+    renderLabels $ over _2 (nodeMap Map.!) <$> labels
