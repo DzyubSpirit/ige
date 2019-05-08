@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 36579278a12d553fd7f8f4267961ecedad7b382d9b3ab1a5b2c4ef568a244bc0
+-- hash: eef42753069b9ebcc34e4eea93d403054c330ce3dd5fe5066e03b9b6fc334b7e
 
 name:           ige
-version:        0.3.1.0
+version:        0.3.1.1
 synopsis:       An keyboard-driven interactive graph editor
 description:    IGE attempts to build a reusable library for implementing graph editors. The intent is to allow a new class of programming languages that have non-linear structure. See `glance` (an alternative syntax for haskell) for one example of such a structure. Other applications include circuit design, commutative diagram drawing, server configuration. Currently a very early alpha.
 category:       Editing

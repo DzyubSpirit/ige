@@ -66,15 +66,15 @@ class Renderable a where
   render :: a -> ℂ -> Render ()
 
 class Renderable a => RenderNode a where
-  renderNode :: a -> ℂ -> Render ()
-  renderNode = render
+  renderNode :: Node -> a -> ℂ -> Render ()
+  renderNode _ = render
 
 class Renderable a => RenderEdge a where
   renderEdge :: a -> ℂ -> ℂ -> Render ()
   renderEdge l p1 p2 = render l $ (p1 + p2) /2
 
 class DimsRenderable a where
-  dimsRender :: (Int, Int) -> a ->  Render ()
+  dimsRender :: (Int, Int) ->  a ->  Render ()
 
 data EditorState n e = EditorState {
     esGraph :: Gr n e

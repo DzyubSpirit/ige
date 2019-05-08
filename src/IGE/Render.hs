@@ -5,7 +5,6 @@ import IGE.Types
 import IGE.Layout
 import Data.Graph.Inductive.Graph
 import Data.Graph.Inductive.PatriciaTree
-import Data.Text (pack)
 import Graphics.Rendering.Cairo
 import Lens.Micro.Platform
 import qualified Data.Map.Strict as Map
@@ -33,16 +32,16 @@ instance Renderable () where
     fill
 
 instance Renderable Weight where
-  render n = render (pack $ show n)
+  render n = render (show n :: Text)
 
 instance RenderNode Text where
-  renderNode t c@(x :+ y) = do
+  renderNode n t c@(x :+ y) = do
     let c' = x :+ (y + 20)
     render () c
-    render t c'
+    render (show n <> "/"<> t) c'
 
 instance RenderNode Weight where
-  renderNode n = renderNode (pack $ show n)
+  renderNode n x = renderNode n (show x)
 
 instance RenderEdge Text where
   renderEdge s p1@(x1 :+ y1) p2@(x2 :+ y2) = do
@@ -55,7 +54,7 @@ instance RenderEdge Text where
     render s p
 
 instance RenderEdge Weight where
-  renderEdge w = renderEdge (pack $ show w)
+  renderEdge w = renderEdge (show w)
 
 instance RenderNode () where
 
@@ -73,8 +72,8 @@ renderBackground = do
   selectFontFace ("monospace" :: Text) FontSlantNormal FontWeightNormal
   setFontSize 15
 
-renderNodes :: (RenderNode a) => [(ℂ, a)] -> Render ()
-renderNodes nodes = mapM_ (uncurry $ flip renderNode) nodes
+renderNodes :: (RenderNode a) => [(Node, a, ℂ)] -> Render ()
+renderNodes = mapM_ (\(n, a, c) -> renderNode n a c)
 
 arrowWidth = 30
 arrowHeight = 5
@@ -126,6 +125,6 @@ instance (RenderNode n, RenderEdge e) => DimsRenderable (EditorState n e) where
     renderEdges
       $   ((_1 %~ (nodeMap Map.!)) . (_2 %~ (nodeMap Map.!)))
       <$> labEdges graph
-    renderNodes $ (_1 %~ (nodeMap Map.!)) <$> labNodes graph
+    renderNodes $ (\(n, a) -> (n, a, nodeMap Map.! n)) <$> labNodes graph
     renderCommand dims (es ^. _prompt ++ reverse (es ^. _cmd))
     renderLabels $ over _2 (nodeMap Map.!) <$> labels
