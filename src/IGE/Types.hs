@@ -139,7 +139,7 @@ updateEditorLayout em = do
   return x
 
 newtype Weight = Weight { weight :: Int }
-  deriving (Eq, Ord, Num, ToJSON, FromJSON)
+  deriving (Eq, Ord, Num, Real, Enum, Integral, ToJSON, FromJSON)
 
 instance Show Weight where
   show (Weight x) = P.show x

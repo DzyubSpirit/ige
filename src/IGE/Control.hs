@@ -215,12 +215,6 @@ defaultKeyBinding kv = case Map.lookup kv navigationKeyMap of
   (Just em) -> updateEditor em
   Nothing   -> void $ handleSpecial kv
    where
-     {-
-    handleSpecial
-      :: (ToJSON n, FromJSON n, Inputable n, ToJSON e, FromJSON e, Inputable e)
-      => KeyVal
-      -> KeyBinding n e (Maybe ())
--}
     handleSpecial kv
       | kv == xK_colon = runMaybeT $ do
         cmd <- readInputPrompt ":"
